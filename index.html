@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>同窓会ビンゴ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;600&family=Cormorant+Garamond:ital,wght@1,500;0,600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F3EE; --ink:#1B2238; --gold:#A8843F; --gold-soft:rgba(168,132,63,.14);
+  --muted:#6E6A62; --cell:#FFFDF9; --sheet:#FFFDF9; --on-gold:#FFFDF9; --win:rgba(168,132,63,.16);
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121829; --ink:#EFE8D8; --gold:#CDAE6E; --gold-soft:rgba(205,174,110,.16);
+    --muted:#A39C8C; --cell:#171E33; --sheet:#1A2238; --on-gold:#121829; --win:rgba(205,174,110,.18);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121829; --ink:#EFE8D8; --gold:#CDAE6E; --gold-soft:rgba(205,174,110,.16);
+  --muted:#A39C8C; --cell:#171E33; --sheet:#1A2238; --on-gold:#121829; --win:rgba(205,174,110,.18);
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Shippori Mincho B1","Hiragino Mincho ProN","Yu Mincho","YuMincho",serif;
+  line-height:1.7; -webkit-tap-highlight-color:transparent;
+}
+main{max-width:460px; margin:0 auto; padding:34px 20px 48px}
+header{text-align:center; margin-bottom:26px}
+.en{font-family:"Cormorant Garamond","Times New Roman",serif; font-style:italic; font-size:1.25rem; color:var(--gold); margin:0; letter-spacing:.04em}
+h1{font-size:1.9rem; font-weight:600; margin:2px 0 10px; letter-spacing:.32em; padding-left:.32em}
+.orn{display:flex; align-items:center; justify-content:center; gap:10px; color:var(--gold)}
+.orn::before,.orn::after{content:""; height:1px; width:64px; background:var(--gold)}
+.orn span{width:7px; height:7px; border:1px solid var(--gold); transform:rotate(45deg)}
+.sub{margin:12px 0 0; color:var(--muted); font-size:.9rem; letter-spacing:.08em}
+.tabs{display:flex; border-top:1px solid var(--gold); border-bottom:1px solid var(--gold); margin-bottom:22px}
+.tabs button{
+  flex:1; font:inherit; font-size:.95rem; letter-spacing:.12em; padding:11px 4px; background:none; border:none;
+  color:var(--muted); cursor:pointer;
+}
+.tabs button[aria-selected="true"]{color:var(--ink); background:var(--gold-soft)}
+button:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+.hint{margin:0 0 14px; font-size:.92rem; color:var(--muted); text-align:center; min-height:1.7em}
+
+.grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:10px;
+  border:1px solid var(--gold); outline:1px solid var(--gold); outline-offset:4px; background:var(--cell);
+}
+.cell{
+  position:relative; aspect-ratio:1; border:1px solid var(--gold-soft); background:transparent;
+  font:inherit; color:var(--ink); padding:4px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-size:clamp(.74rem,3.3vw,.94rem); line-height:1.3; overflow:hidden;
+}
+.cell .fam{font-weight:600; letter-spacing:.06em}
+.cell.empty{color:var(--gold); font-size:1.1rem; font-family:"Cormorant Garamond",serif}
+.cell.win{background:var(--win); border-color:var(--gold)}
+.cell svg{position:absolute; inset:4%; width:92%; height:92%; pointer-events:none}
+.cell svg path{fill:none; stroke:var(--gold); stroke-width:1.6; stroke-linecap:round}
+.cell svg.draw path{stroke-dasharray:1; stroke-dashoffset:1; animation:draw .7s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+.status{display:flex; justify-content:center; gap:40px; margin:22px 2px 20px; font-size:.95rem; letter-spacing:.12em; color:var(--muted)}
+.status strong{color:var(--gold); font-size:1.6rem; font-family:"Cormorant Garamond",serif; font-weight:600; margin-left:6px; letter-spacing:0}
+.actions{display:flex; flex-wrap:wrap; gap:10px}
+.btn{
+  font:inherit; font-size:.92rem; letter-spacing:.1em; padding:12px 16px; border-radius:1px; cursor:pointer;
+  border:1px solid var(--gold); background:transparent; color:var(--ink); flex:1 1 auto;
+}
+.btn.primary{background:var(--gold); color:var(--on-gold); font-weight:600; flex:1 1 100%; padding:15px}
+.btn:disabled{opacity:.35; cursor:not-allowed}
+.btn.warn{color:var(--muted); border-color:var(--gold-soft)}
+
+.backdrop{position:fixed; inset:0; background:rgba(8,10,20,.55); display:none; z-index:10}
+.backdrop.open{display:block}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; max-height:78%; overflow:auto; background:var(--sheet);
+  border-top:1px solid var(--gold); padding:22px 18px calc(20px + env(safe-area-inset-bottom,0px));
+  max-width:520px; margin:0 auto;
+}
+.sheet h2{font-size:1.05rem; font-weight:600; letter-spacing:.14em; text-align:center; margin:0 0 16px}
+.names{display:grid; grid-template-columns:repeat(2,1fr); gap:6px; margin-bottom:16px}
+.names button{
+  font:inherit; font-size:.98rem; letter-spacing:.06em; padding:10px 6px; border:1px solid var(--gold-soft);
+  background:transparent; color:var(--ink); cursor:pointer;
+}
+.names button.cur{border-color:var(--gold); background:var(--gold-soft)}
+.names button:disabled{opacity:.3; cursor:default}
+
+.overlay{position:fixed; inset:0; background:rgba(8,10,20,.7); display:none; z-index:20; align-items:center; justify-content:center; padding:24px}
+.overlay.open{display:flex}
+.overlay .panel{background:var(--sheet); border:1px solid var(--gold); outline:1px solid var(--gold); outline-offset:-8px; padding:34px 26px 28px; text-align:center; width:100%; max-width:340px}
+.overlay .big{position:relative; width:190px; height:190px; margin:0 auto 10px; display:flex; flex-direction:column; align-items:center; justify-content:center}
+.overlay .big svg{position:absolute; inset:0; width:100%; height:100%}
+.overlay .big svg path{fill:none; stroke:var(--gold); stroke-width:1}
+.overlay .big span{font-family:"Cormorant Garamond",serif; font-style:italic; font-size:2.6rem; color:var(--gold); line-height:1}
+.overlay .big small{font-size:.9rem; letter-spacing:.3em; margin-top:6px}
+.overlay p{white-space:pre-line; line-height:1.9; margin:0 0 20px; font-size:.95rem; letter-spacing:.08em}
+
+.drawbox{border:1px solid var(--gold); outline:1px solid var(--gold); outline-offset:4px; background:var(--cell); text-align:center; padding:34px 12px 22px; margin:4px 0 22px}
+.drawn{font-size:clamp(1.9rem,10vw,2.7rem); font-weight:600; letter-spacing:.14em; min-height:1.4em; line-height:1.3}
+.count{color:var(--muted); margin-top:10px; font-size:.88rem; letter-spacing:.1em}
+.history{margin:24px 0 18px; padding:0; list-style:none; display:grid; grid-template-columns:repeat(2,1fr); gap:2px 18px}
+.history li{font-size:.94rem; letter-spacing:.06em; border-bottom:1px solid var(--gold-soft); padding:5px 0}
+.history li span{color:var(--gold); font-family:"Cormorant Garamond",serif; display:inline-block; min-width:2em}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion: reduce){ .cell svg.draw path{animation:none; stroke-dashoffset:0} }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="en">Class Reunion</p>
+    <h1>同窓会ビンゴ</h1>
+    <div class="orn" aria-hidden="true"><span></span></div>
+    <p class="sub">呼ばれた名前に印をつけて、一列揃えばビンゴ</p>
+  </header>
+
+  <section id="viewCard">
+    <p class="hint" id="hint"></p>
+    <div class="grid" id="grid"></div>
+    <div class="status" id="status"></div>
+    <div class="actions" id="actions"></div>
+  </section>
+</main>
+
+<div class="backdrop" id="backdrop">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <h2 id="sheetTitle">このマスに入れる名前</h2>
+    <div class="names" id="names"></div>
+    <div class="actions">
+      <button class="btn" id="clearCell">このマスを空ける</button>
+      <button class="btn" id="closeSheet">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="panel" role="dialog" aria-modal="true">
+    <div class="big" id="bigMark"><span>Bingo</span><small>ビンゴ</small></div>
+    <p id="bingoMsg"></p>
+    <button class="btn primary" id="closeOverlay">続ける</button>
+  </div>
+</div>
+
+<script>
+const NAMES=[["黒木","梨沙"],["飯田","ゆかり"],["竹中","絵理"],["寺内","希帆"],["石井","文月"],["星野","伶委"],["上原","早紀"],["女鹿","美沙子"],["塩谷","美貴"],["林","玲奈"],["紅川","詩穂里"],["田宮","子帆"],["島田","温子"],["扶川","幸枝"],["高木","碧"],["瀬戸口","沙重子"],["今","悠理子"],["大山","郁美"],["伊藤","真知子"],["武山","彩織"],["茂木","明"],["廣瀬","玲奈"],["波多野","麻美"],["磯川","ゆうき"],["佐藤","知佳"],["田所","彩"]];
+const full=i=>NAMES[i][0]+NAMES[i][1];
+const LINES=[[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],[0,5,10,15],[3,6,9,12]];
+
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+
+let P=load("bingo-player",null)||{cells:Array(16).fill(null),marked:Array(16).fill(false),locked:false,seen:0};
+let H=load("bingo-host",null)||{drawn:[]};
+let lastMarked=-1, editing=-1;
+
+/* 印の線 */
+function hanamaru(R,a,k,rot){
+  let d="";const n=360;
+  for(let s=0;s<=n;s++){
+    const t=s/n*Math.PI*2+rot;
+    const r=R*(1+0.03*Math.sin(t*2));
+    const x=50+r*Math.cos(t)+a*Math.cos(k*t);
+    const y=50+r*Math.sin(t)+a*Math.sin(k*t);
+    d+=(s?"L":"M")+x.toFixed(1)+" "+y.toFixed(1);
+  }
+  return d;
+}
+const ring=r=>`M${50-r} 50A${r} ${r} 0 1 1 ${50+r} 50A${r} ${r} 0 1 1 ${50-r} 50`;
+const MARK=ring(44)+ring(39);
+document.getElementById("bigMark").insertAdjacentHTML("afterbegin",
+  `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${ring(48)+ring(44)}"/></svg>`);
+
+function lineStats(){
+  let bingo=[],reach=0;
+  LINES.forEach(l=>{const c=l.filter(i=>P.marked[i]).length;if(c===4)bingo.push(l);else if(c===3)reach++;});
+  return {bingo,reach};
+}
+
+function renderCard(){
+  const g=document.getElementById("grid");
+  const {bingo,reach}=lineStats();
+  const win=new Set(bingo.flat());
+  g.innerHTML="";
+  P.cells.forEach((n,i)=>{
+    const b=document.createElement("button");
+    b.className="cell"+(n===null?" empty":"")+(win.has(i)?" win":"");
+    if(n===null){b.textContent="+";b.setAttribute("aria-label","空きマス、名前を選ぶ");}
+    else{
+      b.innerHTML=`<span class="fam">${NAMES[n][0]}</span><span>${NAMES[n][1]}</span>`;
+      b.setAttribute("aria-label",full(n)+(P.marked[i]?"、印済み":""));
+      if(P.locked)b.setAttribute("aria-pressed",P.marked[i]?"true":"false");
+      if(P.marked[i])b.insertAdjacentHTML("beforeend",`<svg viewBox="0 0 100 100" class="${i===lastMarked?"draw":""}" aria-hidden="true"><path pathLength="1" d="${MARK}"/></svg>`);
+    }
+    b.onclick=()=>onCell(i);
+    g.appendChild(b);
+  });
+  lastMarked=-1;
+  const filled=P.cells.filter(x=>x!==null).length;
+  const hint=document.getElementById("hint"),st=document.getElementById("status"),ac=document.getElementById("actions");
+  if(!P.locked){
+    hint.textContent="マスをタップして名前をお選びください";
+    st.innerHTML=filled<16?`<span>あと <strong>${16-filled}</strong> マス</span>`:`<span>全部埋まりました</span>`;
+    ac.innerHTML=`<button class="btn primary" id="startBtn" ${filled<16?"disabled":""}>このカードで始める</button>
+      <button class="btn" id="autoBtn">空きをおまかせで埋める</button>
+      <button class="btn warn" id="wipeBtn">全部消す</button>`;
+    document.getElementById("startBtn").onclick=()=>{P.locked=true;save("bingo-player",P);renderCard();};
+    document.getElementById("autoBtn").onclick=autoFill;
+    twoStep(document.getElementById("wipeBtn"),"全部消す",()=>{P.cells=Array(16).fill(null);save("bingo-player",P);renderCard();});
+  }else{
+    hint.textContent="名前が呼ばれたらマスをタップ。もう一度で取り消し";
+    st.innerHTML=`<span>リーチ<strong>${reach}</strong></span><span>ビンゴ<strong>${bingo.length}</strong></span>`;
+    ac.innerHTML=`<button class="btn warn" id="remakeBtn">カードを作り直す</button>`;
+    twoStep(document.getElementById("remakeBtn"),"カードを作り直す",()=>{
+      P={cells:Array(16).fill(null),marked:Array(16).fill(false),locked:false,seen:0};save("bingo-player",P);renderCard();});
+  }
+}
+
+function twoStep(btn,label,fn){
+  let armed=false,t;
+  btn.onclick=()=>{
+    if(armed){clearTimeout(t);fn();return;}
+    armed=true;btn.textContent="もう一度押すと確定";
+    t=setTimeout(()=>{armed=false;btn.textContent=label;},3000);
+  };
+}
+
+function onCell(i){
+  if(!P.locked){openSheet(i);return;}
+  if(P.cells[i]===null)return;
+  P.marked[i]=!P.marked[i];
+  if(P.marked[i])lastMarked=i;
+  const n=lineStats().bingo.length;
+  const newBingo=n>P.seen;
+  P.seen=n;save("bingo-player",P);renderCard();
+  if(newBingo){
+    document.getElementById("bingoMsg").textContent=n===1?"おめでとうございます！ビンゴです！\n手を挙げて教えてください。":"おめでとうございます！ビンゴです！";
+    document.getElementById("overlay").classList.add("open");
+    document.getElementById("closeOverlay").focus();
+  }
+}
+
+function autoFill(){
+  const used=new Set(P.cells.filter(x=>x!==null));
+  const pool=NAMES.map((_,i)=>i).filter(i=>!used.has(i));
+  for(let j=pool.length-1;j>0;j--){const r=Math.floor(Math.random()*(j+1));[pool[j],pool[r]]=[pool[r],pool[j]];}
+  P.cells=P.cells.map(x=>x===null?pool.pop():x);
+  save("bingo-player",P);renderCard();
+}
+
+function openSheet(i){
+  editing=i;
+  const used=new Set(P.cells.filter((x,k)=>x!==null&&k!==i));
+  const box=document.getElementById("names");box.innerHTML="";
+  NAMES.forEach((_,n)=>{
+    const b=document.createElement("button");
+    b.textContent=full(n);
+    if(P.cells[i]===n)b.className="cur";
+    if(used.has(n))b.disabled=true;
+    b.onclick=()=>{P.cells[editing]=n;save("bingo-player",P);closeSheet();renderCard();};
+    box.appendChild(b);
+  });
+  document.getElementById("clearCell").hidden=P.cells[i]===null;
+  document.getElementById("backdrop").classList.add("open");
+}
+function closeSheet(){document.getElementById("backdrop").classList.remove("open");}
+document.getElementById("closeSheet").onclick=closeSheet;
+document.getElementById("clearCell").onclick=()=>{P.cells[editing]=null;save("bingo-player",P);closeSheet();renderCard();};
+document.getElementById("backdrop").onclick=e=>{if(e.target.id==="backdrop")closeSheet();};
+document.getElementById("closeOverlay").onclick=()=>document.getElementById("overlay").classList.remove("open");
+
+renderCard();
+</script>
+</body>
+</html>
